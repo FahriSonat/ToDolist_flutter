@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'core/utils/app_date_format.dart';
 import 'features/settings/data/settings_repository.dart';
 import 'features/todos/application/reminder_scheduler.dart';
 import 'features/todos/data/repositories/sqlite_todo_repository.dart';
@@ -13,6 +14,9 @@ final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 /// Uygulama başlatma ve altyapı kurulumu (architucture.md)
 Future<ProviderContainer> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Tarih ve saat formatlama yerelleştirmesini başlat (tr_TR)
+  await AppDateFormat.initialize();
 
   if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/app_date_format.dart';
 import '../../application/todo_providers.dart';
 import '../../domain/entities/checklist_item.dart';
 import '../../domain/entities/todo.dart';
@@ -69,11 +69,17 @@ class _TodoEditPageState extends ConsumerState<TodoEditPage> {
   Future<void> _pickDueDate() async {
     final now = DateTime.now();
     final initial = _selectedDueLocal ?? now;
+    final firstDate = DateTime(2020);
+    final lastDate = DateTime(2100);
+    final safeInitial = initial.isBefore(firstDate)
+        ? firstDate
+        : (initial.isAfter(lastDate) ? lastDate : initial);
+
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: initial,
-      firstDate: now.subtract(const Duration(days: 365)),
-      lastDate: now.add(const Duration(days: 365 * 5)),
+      initialDate: safeInitial,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) {
         return Theme(
           data: AppTheme.darkTheme,
@@ -86,11 +92,51 @@ class _TodoEditPageState extends ConsumerState<TodoEditPage> {
 
     final initialTime = _selectedDueLocal != null
         ? TimeOfDay(hour: _selectedDueLocal!.hour, minute: _selectedDueLocal!.minute)
-        : const TimeOfDay(hour: 12, minute: 0);
+        : TimeOfDay(hour: now.hour, minute: (now.minute / 5).ceil() * 5 % 60);
 
     final pickedTime = await showTimePicker(
       context: context,
       initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: AppTheme.darkTheme,
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+            child: child!,
+          ),
+        );
+      },
+    );
+
+    if (!mounted) return;
+
+    final effectiveTime = pickedTime ?? initialTime;
+
+    setState(() {
+      _selectedDueLocal = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        effectiveTime.hour,
+        effectiveTime.minute,
+      );
+    });
+  }
+
+  Future<void> _pickDueDateOnly() async {
+    final now = DateTime.now();
+    final initial = _selectedDueLocal ?? now;
+    final firstDate = DateTime(2020);
+    final lastDate = DateTime(2100);
+    final safeInitial = initial.isBefore(firstDate)
+        ? firstDate
+        : (initial.isAfter(lastDate) ? lastDate : initial);
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: safeInitial,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) {
         return Theme(
           data: AppTheme.darkTheme,
@@ -99,13 +145,48 @@ class _TodoEditPageState extends ConsumerState<TodoEditPage> {
       },
     );
 
-    if (pickedTime == null || !mounted) return;
+    if (pickedDate == null || !mounted) return;
+
+    final existingTime = _selectedDueLocal != null
+        ? TimeOfDay(hour: _selectedDueLocal!.hour, minute: _selectedDueLocal!.minute)
+        : const TimeOfDay(hour: 12, minute: 0);
 
     setState(() {
       _selectedDueLocal = DateTime(
         pickedDate.year,
         pickedDate.month,
         pickedDate.day,
+        existingTime.hour,
+        existingTime.minute,
+      );
+    });
+  }
+
+  Future<void> _pickDueTimeOnly() async {
+    final baseDate = _selectedDueLocal ?? DateTime.now();
+    final initialTime = TimeOfDay(hour: baseDate.hour, minute: baseDate.minute);
+
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: AppTheme.darkTheme,
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+            child: child!,
+          ),
+        );
+      },
+    );
+
+    if (pickedTime == null || !mounted) return;
+
+    setState(() {
+      _selectedDueLocal = DateTime(
+        baseDate.year,
+        baseDate.month,
+        baseDate.day,
         pickedTime.hour,
         pickedTime.minute,
       );
@@ -328,39 +409,78 @@ class _TodoEditPageState extends ConsumerState<TodoEditPage> {
             ),
             const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: AppTheme.surface,
                 borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                 border: Border.all(color: AppTheme.divider),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  const Icon(Icons.event_outlined, color: AppTheme.textSecondary, size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _selectedDueLocal != null
-                          ? DateFormat('d MMMM yyyy, HH:mm', 'tr_TR').format(_selectedDueLocal!)
-                          : 'Tarih seçilmedi',
-                      style: TextStyle(
-                        color: _selectedDueLocal != null
-                            ? AppTheme.textPrimary
-                            : AppTheme.textSecondary,
-                        fontSize: 14,
+                  Row(
+                    children: [
+                      const Icon(Icons.alarm_rounded, color: AppTheme.textSecondary, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _selectedDueLocal != null
+                              ? AppDateFormat.formatFull(_selectedDueLocal!)
+                              : 'Tarih ve saat seçilmedi',
+                          style: TextStyle(
+                            color: _selectedDueLocal != null
+                                ? AppTheme.textPrimary
+                                : AppTheme.textSecondary,
+                            fontSize: 14,
+                            fontWeight: _selectedDueLocal != null ? FontWeight.w600 : FontWeight.normal,
+                          ),
+                        ),
                       ),
-                    ),
+                      if (_selectedDueLocal != null)
+                        IconButton(
+                          tooltip: 'Zamanı Kaldır',
+                          icon: const Icon(Icons.clear_rounded, size: 20, color: AppTheme.textSecondary),
+                          onPressed: _clearDueDate,
+                        ),
+                      if (_selectedDueLocal == null)
+                        TextButton.icon(
+                          onPressed: _pickDueDate,
+                          icon: const Icon(Icons.calendar_today_rounded, size: 16),
+                          label: const Text('Seç'),
+                        ),
+                    ],
                   ),
-                  if (_selectedDueLocal != null)
-                    IconButton(
-                      tooltip: 'Tarihi Kaldır',
-                      icon: const Icon(Icons.clear_rounded, size: 20, color: AppTheme.textSecondary),
-                      onPressed: _clearDueDate,
+                  if (_selectedDueLocal != null) ...[
+                    const SizedBox(height: 6),
+                    const Divider(),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton.icon(
+                            style: TextButton.styleFrom(
+                              backgroundColor: AppTheme.surfaceRaised,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                            icon: const Icon(Icons.calendar_month_outlined, size: 18),
+                            label: const Text('Tarih Değiştir', style: TextStyle(fontSize: 13)),
+                            onPressed: _pickDueDateOnly,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextButton.icon(
+                            style: TextButton.styleFrom(
+                              backgroundColor: AppTheme.surfaceRaised,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                            icon: const Icon(Icons.access_time_rounded, size: 18),
+                            label: const Text('Saat Ayarla', style: TextStyle(fontSize: 13)),
+                            onPressed: _pickDueTimeOnly,
+                          ),
+                        ),
+                      ],
                     ),
-                  TextButton(
-                    onPressed: _pickDueDate,
-                    child: Text(_selectedDueLocal != null ? 'Değiştir' : 'Seç'),
-                  ),
+                  ],
                 ],
               ),
             ),

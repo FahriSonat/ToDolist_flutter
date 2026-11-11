@@ -152,6 +152,48 @@ class AppTheme {
           borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
       ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: surfaceRaised,
+        hourMinuteColor: surface,
+        hourMinuteTextColor: textPrimary,
+        dayPeriodColor: surface,
+        dayPeriodTextColor: textPrimary,
+        dialHandColor: textPrimary,
+        dialBackgroundColor: surface,
+        dialTextColor: textPrimary,
+        entryModeIconColor: textPrimary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+          side: const BorderSide(color: divider),
+        ),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: surfaceRaised,
+        headerBackgroundColor: surface,
+        headerForegroundColor: textPrimary,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+          side: const BorderSide(color: divider),
+        ),
+        dayForegroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+          if (states.contains(WidgetState.selected)) {
+            return background;
+          }
+          if (states.contains(WidgetState.disabled)) {
+            return textDone;
+          }
+          return textPrimary;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+          if (states.contains(WidgetState.selected)) {
+            return textPrimary;
+          }
+          return null;
+        }),
+        todayForegroundColor: const WidgetStatePropertyAll(textPrimary),
+        todayBackgroundColor: const WidgetStatePropertyAll(divider),
+      ),
     );
   }
 }

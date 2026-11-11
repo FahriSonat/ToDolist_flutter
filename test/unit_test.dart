@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:priority_todo/core/clock/clock.dart';
+import 'package:priority_todo/core/utils/app_date_format.dart';
 import 'package:priority_todo/features/settings/domain/settings_entity.dart';
 import 'package:priority_todo/features/todos/application/todo_sort_mode.dart';
 import 'package:priority_todo/features/todos/domain/entities/checklist_item.dart';
@@ -223,6 +224,33 @@ void main() {
       expect(todo.totalItemsCount, 3);
       expect(todo.completedItemsCount, 2);
       expect(todo.hasChecklist, isTrue);
+    });
+  });
+
+  group('4. Tarih ve Saat Formatlama Testleri (AppDateFormat)', () {
+    test('Tarih formatlama başlatılmadan da çökmeden format döndürmelidir', () {
+      final testDate = DateTime(2026, 11, 9, 14, 30);
+      final formattedFull = AppDateFormat.formatFull(testDate);
+      expect(formattedFull, isNotEmpty);
+      expect(formattedFull.contains('14:30'), isTrue);
+
+      final formattedShort = AppDateFormat.formatShort(testDate);
+      expect(formattedShort, isNotEmpty);
+      expect(formattedShort.contains('14:30'), isTrue);
+
+      final formattedTime = AppDateFormat.formatTime(testDate);
+      expect(formattedTime, '14:30');
+    });
+
+    test('Göreceli tarih formatlaması bugün, yarın ve dün için doğru çalışmalıdır', () {
+      final now = DateTime.now();
+      final todayAt15 = DateTime(now.year, now.month, now.day, 15, 0).toUtc();
+      final tomorrowAt15 = todayAt15.add(const Duration(days: 1));
+      final yesterdayAt15 = todayAt15.subtract(const Duration(days: 1));
+
+      expect(AppDateFormat.formatRelative(todayAt15), contains('Bugün'));
+      expect(AppDateFormat.formatRelative(tomorrowAt15), contains('Yarın'));
+      expect(AppDateFormat.formatRelative(yesterdayAt15), contains('Dün'));
     });
   });
 }

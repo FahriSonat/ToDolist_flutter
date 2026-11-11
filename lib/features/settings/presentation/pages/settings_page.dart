@@ -52,7 +52,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       builder: (context, child) {
         return Theme(
           data: AppTheme.darkTheme,
-          child: child!,
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+            child: child!,
+          ),
         );
       },
     );

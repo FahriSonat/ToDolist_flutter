@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:priority_todo/core/theme/app_theme.dart';
 import 'package:priority_todo/features/todos/domain/entities/todo.dart';
 import 'package:priority_todo/features/todos/domain/entities/todo_priority.dart';
+import 'package:priority_todo/features/todos/presentation/pages/todo_edit_page.dart';
 import 'package:priority_todo/features/todos/presentation/widgets/confirm_delete_dialog.dart';
 import 'package:priority_todo/features/todos/presentation/widgets/priority_badge.dart';
 import 'package:priority_todo/features/todos/presentation/widgets/strike_text.dart';
@@ -153,6 +155,39 @@ void main() {
       );
 
       expect(find.text('Süresi geçti'), findsOneWidget);
+    });
+  });
+
+  group('5. TodoEditPage Tarih ve Saat Seçimi Testleri', () {
+    testWidgets('Tarih ve saat içeren TodoEditPage hatasız ve gri ekransız render edilmelidir', (tester) async {
+      final nowUtc = DateTime.utc(2026, 11, 9, 14, 30);
+      final todoWithDue = Todo(
+        id: 'edit-test-1',
+        title: 'Saatli Görev',
+        priority: TodoPriority.high,
+        dueAtUtc: nowUtc,
+        isDone: false,
+        manualPosition: 0,
+        createdAtUtc: nowUtc,
+        updatedAtUtc: nowUtc,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: TodoEditPage(initialTodo: todoWithDue),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Görevi Düzenle'), findsOneWidget);
+      expect(find.text('Saatli Görev'), findsOneWidget);
+      expect(find.text('Tarih Değiştir'), findsOneWidget);
+      expect(find.text('Saat Ayarla'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

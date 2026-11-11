@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/app_date_format.dart';
 import '../../domain/entities/todo.dart';
 import 'priority_badge.dart';
 import 'strike_text.dart';
@@ -23,21 +23,7 @@ class TodoListItem extends StatelessWidget {
   });
 
   String _formatDueDate(DateTime dueAtUtc) {
-    final local = dueAtUtc.toLocal();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final dueDay = DateTime(local.year, local.month, local.day);
-
-    final timeStr = DateFormat('HH:mm').format(local);
-    if (dueDay == today) {
-      return 'Bugün $timeStr';
-    } else if (dueDay == today.add(const Duration(days: 1))) {
-      return 'Yarın $timeStr';
-    } else if (dueDay == today.subtract(const Duration(days: 1))) {
-      return 'Dün $timeStr';
-    } else {
-      return DateFormat('d MMM, HH:mm', 'tr_TR').format(local);
-    }
+    return AppDateFormat.formatRelative(dueAtUtc, fullFormat: false);
   }
 
   @override

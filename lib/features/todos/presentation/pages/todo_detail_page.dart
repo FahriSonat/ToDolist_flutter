@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/app_date_format.dart';
 import '../../application/todo_providers.dart';
 import '../../domain/entities/checklist_item.dart';
 import '../../domain/entities/todo.dart';
@@ -32,21 +32,7 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
   }
 
   String _formatDetailDate(DateTime dueAtUtc) {
-    final local = dueAtUtc.toLocal();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final dueDay = DateTime(local.year, local.month, local.day);
-    final timeStr = DateFormat('HH:mm').format(local);
-
-    if (dueDay == today) {
-      return 'Bugün, $timeStr';
-    } else if (dueDay == today.add(const Duration(days: 1))) {
-      return 'Yarın, $timeStr';
-    } else if (dueDay == today.subtract(const Duration(days: 1))) {
-      return 'Dün, $timeStr';
-    } else {
-      return DateFormat('d MMMM yyyy, HH:mm', 'tr_TR').format(local);
-    }
+    return AppDateFormat.formatRelative(dueAtUtc, fullFormat: true);
   }
 
   Future<void> _handleDelete(Todo todo) async {
